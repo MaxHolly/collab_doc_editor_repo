@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Socket.IO Realtime Test</title>
+</head>
+<body>
+  <h1>Socket.IO Test</h1>
+  <pre id="log"></pre>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const token = prompt("Enter JWT token:");
+    const docId = prompt("Enter document ID:");
+
+    const log = (msg) => {
+      console.log(msg);
+      document.getElementById("log").textContent += msg + "\n";
+    };
+
+    const socket = io("http://localhost:5000", {
+      query: { token },
+      transports: ["websocket"]
+    });
+
+    socket.on("connect", () => {
+      log("[Connected]");
+      socket.emit("join_document", { document_id: parseInt(docId) });
+    });
+
+    socket.on("load_document_content", (data) => {
+      log("[Loaded] " + JSON.stringify(data));
+    });
+
+    socket.on("document_updated", (data) => {
+      log("[Updated] " + JSON.stringify(data));
+    });
+
+    socket.on("error", (e) => {
+      log("[Error] " + JSON.stringify(e));
+    });
+
+    // Trigger a fake edit after 3 seconds
+    setTimeout(() => {
+      log("[Emitting] document_change...");
+      socket.emit("document_change", {
+        document_id: parseInt(docId),
+        content: { ops: [{ insert: "Hello from browser!\n" }] }
+      });
+    }, 3000);
+  </script>
+</body>
+</html>

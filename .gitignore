@@ -1,0 +1,37 @@
+# OS / editors
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+frontend/.next/
+frontend/.nuxt/
+
+# Python (ignore everywhere)
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.coverage
+**/htmlcov/
+backend/.env
+backend/.env.*.local
+backend/venv/
+backend/.venv/
+
+# DB / data
+db_data/
+**/*.sqlite
+
+# Docker
+**/.dockerignore
+docker-*.log
+
+# Logs
+*.log
+*.local
