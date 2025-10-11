@@ -36,7 +36,7 @@ def handle_join_document(user_id, doc_id, data):
     doc = db.session.get(Document, doc_id)
     if doc:
         # Send snapshot only to this client
-        emit("load_document_content", {"title": doc.title, "content": doc.content}, room=request.sid)
+        emit("load_document_content", {"title": doc.title, "description": getattr(doc, "description", None), "content": doc.content}, room=request.sid)
         # Notify others in the room
         emit("user_joined", {"user_id": user_id}, to=room, include_self=False)
 
@@ -61,11 +61,39 @@ def handle_document_change(user_id, doc_id, data):
         return
 
     doc.content = new_content
+    doc.updated_at = db.func.now()
     db.session.commit()
 
     emit(
         "document_updated",
         {"document_id": doc_id, "content": new_content, "by_user_id": user_id},
+        to=f"doc_{doc_id}",
+        include_self=False,
+    )
+
+@socketio.on("update_document_metadata")
+@ws_login_required
+@document_access_required(["editor", "owner"])
+def handle_update_document_metadata(user_id, doc_id, data):
+    title = (data or {}).get("title")
+    description = (data or {}).get("description")
+
+    doc = db.session.get(Document, doc_id)
+    if not doc:
+        emit("error", {"message": "Document not found"}, room=request.sid)
+        return
+    
+    if title is not None and title.strip() != "":
+        doc.title = title
+    if description is not None and description.strip() != "":
+        doc.description = description
+
+    doc.updated_at = db.func.now()
+    db.session.commit()
+
+    emit(
+        "document_metadata_updated",
+        {"document_id": doc_id, "title": doc.title, "description": doc.description, "by_user_id": user_id},
         to=f"doc_{doc_id}",
         include_self=False,
     )
