@@ -9,7 +9,8 @@ type DocDetail = {
   id: number;
   title: string;
   description?: string;
-  owner_id: number;
+  owner?: { id: number; username?: string; email?: string };
+  permission_level: "viewer" | "editor" | "owner";
   updated_at: string;
   content: unknown;
 };
@@ -122,6 +123,7 @@ export default function DocumentDetail() {
   }
 
   if (!doc) return <div className="p-6">Loading…</div>;
+  const canShare = doc.permission_level == "owner"
 
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-4">
@@ -134,25 +136,29 @@ export default function DocumentDetail() {
           >
             Open editor
           </Link>
-          <Link
-            to={`/docs/${doc.id}/share`}
-            className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-          >
-            Share
-          </Link>
+          {canShare && (
+            <Link
+                to={`/docs/${doc.id}/share`}
+                className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+            >
+                Share
+            </Link>
+          )}
+          {canShare && (
           <button
             onClick={destroy}
             className="px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700"
           >
             Delete
           </button>
+        )}
         </div>
       </div>
 
       {msg && <div className="text-sm text-blue-700">{msg}</div>}
 
       <div className="text-xs text-gray-500">
-        Owner: {doc.owner_id} • Updated: {new Date(doc.updated_at).toLocaleString()}
+        Owner: {doc.owner?.username} • Updated: {new Date(doc.updated_at).toLocaleString()}
       </div>
 
       <div className="space-y-3">
