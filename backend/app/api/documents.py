@@ -33,13 +33,14 @@ def create_document():
     except ValidationError as e:
         return _ve_to_json(e), 422
     
-    title = data.title if not None else "Untitled Document"
+    title = data.title if data.title is not None else "Untitled Document"
+    description = data.description if data.description is not None else ""
     content = data.content
-    doc = Document(title=title, content=content, owner_id=user_id)
+    doc = Document(title=title, description=description, content=content, owner_id=user_id)
     db.session.add(doc); db.session.flush()
     db.session.add(DocumentCollaborator(document_id=doc.id, user_id=user_id, permission_level="owner"))
     db.session.commit()
-    return jsonify({"id": doc.id, "title": doc.title}), 201
+    return jsonify({"id": doc.id, "title": doc.title, "description": doc.description}), 201
 
 @bp.get("/documents")
 @jwt_required()
@@ -63,7 +64,7 @@ def list_documents():
 def get_document(doc_id: int):
     d = db.session.get(Document, doc_id)
     if not d: return jsonify({"message": "Not found"}), 404
-    return jsonify({"id": d.id, "title": d.title, "content": d.content,
+    return jsonify({"id": d.id, "title": d.title, "content": d.content, "description": d.description,
                     "owner_id": d.owner_id, "updated_at": d.updated_at.isoformat()})
 
 @bp.put("/documents/<int:doc_id>")
@@ -80,6 +81,8 @@ def update_document(doc_id: int):
 
     if data.title is not None:
         d.title = data.title
+    if data.description is not None:
+        d.description = data.description
     if data.content is not None:
         d.content = data.content
     db.session.commit()

@@ -10,6 +10,7 @@ type ErrorResponse = { message?: string; errors?: unknown };
 
 export default function DocumentCreate() {
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [contentText, setContentText] = useState(""); // JSON string (optional)
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -37,7 +38,7 @@ export default function DocumentCreate() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token ?? ""}`,
         },
-        body: JSON.stringify({ title, content }),
+        body: JSON.stringify({ title, description, content }),
       });
       if (!r.ok) {
         const data = await safeJson<ErrorResponse>(r);
@@ -69,6 +70,14 @@ export default function DocumentCreate() {
           onChange={(e) => setTitle(e.target.value)}
           minLength={1}
           required
+        />
+        <input
+            className="w-full border rounded p-2"
+            placeholder="Description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            minLength={0}
+            maxLength={255}
         />
         <textarea
           className="w-full border rounded p-2 font-mono text-sm min-h-[160px]"
