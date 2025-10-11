@@ -85,6 +85,7 @@ def update_document(doc_id: int):
         d.description = data.description
     if data.content is not None:
         d.content = data.content
+    d.updated_at = db.func.now()
     db.session.commit()
     return jsonify({"message":"updated"})
 

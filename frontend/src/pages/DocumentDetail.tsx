@@ -126,14 +126,19 @@ export default function DocumentDetail() {
   return (
     <div className="max-w-3xl mx-auto p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Document #{doc.id}</h1>
+        <h1 className="text-2xl font-bold">Document #{doc.id}: {title}</h1>
         <div className="flex gap-2">
-          {/* placeholder link for your real editor page */}
           <Link
             to={`/doc/${doc.id}`}
             className="px-3 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700"
           >
             Open editor
+          </Link>
+          <Link
+            to={`/docs/${doc.id}/share`}
+            className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Share
           </Link>
           <button
             onClick={destroy}

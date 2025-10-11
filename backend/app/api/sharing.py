@@ -39,10 +39,21 @@ def add_collaborator(doc_id):
         return jsonify(message="Only owner can share"), 403
 
     data = request.get_json() or {}
-    user_id = data.get("user_id")
     level = data.get("permission_level", "viewer")
     if level not in ("viewer", "editor"):
         return jsonify(message="Invalid permission_level"), 400
+    
+    # allow email in addition to user_id
+    user_id = data.get("user_id")
+    email = data.get("email")
+    if not user_id and not email:
+        return jsonify(message="user_id or email required"), 400
+    
+    if email and not user_id:
+        user = db.session.query(User).filter_by(email=email).first()
+        if not user:
+            return jsonify(message="User with this email not found"), 404
+        user_id = user.id
 
     # upsert
     c = db.session.query(DocumentCollaborator).filter_by(document_id=doc_id, user_id=user_id).first()
