@@ -8,6 +8,7 @@ import { safeJson } from "../lib/http";
 type DocDetail = {
   id: number;
   title: string;
+  description?: string;
   owner_id: number;
   updated_at: string;
   content: unknown;
@@ -22,6 +23,7 @@ export default function DocumentDetail() {
   const [msg, setMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [contentText, setContentText] = useState("");
   const navigate = useNavigate();
 
@@ -43,6 +45,7 @@ export default function DocumentDetail() {
       const d = data as DocDetail;
       setDoc(d);
       setTitle(d.title);
+      setDescription(d.description || "");
       setContentText(
         d.content ? JSON.stringify(d.content, null, 2) : ""
       );
@@ -80,7 +83,7 @@ export default function DocumentDetail() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token ?? ""}`,
         },
-        body: JSON.stringify({ title, content }),
+        body: JSON.stringify({ title, description, content }),
       });
       if (!r.ok) {
         const data = await safeJson<Msg>(r);
@@ -153,6 +156,13 @@ export default function DocumentDetail() {
           className="w-full border rounded p-2"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+        />
+
+        < label className="block text-sm font-medium">Description</label>
+        <input
+          className="w-full border rounded p-2"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
         />
 
         <label className="block text-sm font-medium">Content (JSON)</label>

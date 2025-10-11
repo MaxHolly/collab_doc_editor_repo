@@ -21,8 +21,10 @@ class LoginSchema(BaseModel):
 
 class CreateDocSchema(BaseModel):
     title: str
+    description: Optional[str] = None
     content: Optional[Dict[str, Any]] = None
 
 class UpdateDocSchema(BaseModel):
     title: Optional[str] = None
+    description: Optional[str] = None
     content: Optional[Dict[str, Any]] = None
