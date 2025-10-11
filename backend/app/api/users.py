@@ -21,3 +21,18 @@ def me_patch():
         u.username = data["username"]
     db.session.commit()
     return jsonify(msg="updated")
+
+@bp_users.get("/users/search")
+@jwt_required()
+def user_search():
+    q = (request.args.get("q") or "").strip()
+    if not q or len(q) < 5:
+        return jsonify([]) # require at least 2 chars for query
+    rows = (
+        db.session.query(User.id, User.username, User.email)
+        .filter(User.email.ilike(f"%{q}%"))
+        .order_by(User.email.asc())
+        .limit(10)
+        .all()
+    )
+    return jsonify([{"id": r.id, "username": r.username, "email": r.email} for r in rows])

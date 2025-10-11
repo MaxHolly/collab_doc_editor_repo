@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { API_BASE } from "../lib/env";
 import { errorMessage } from "../lib/errors";
 import { safeJson } from "../lib/http";
+import { Link } from "react-router-dom";
+
 
 type ErrorResponse = { message?: string; errors?: unknown };
 
@@ -56,6 +58,10 @@ export default function RegisterPage() {
           {busy ? "Creating…" : "Create account"}
         </button>
       </form>
+        <div className="text-sm">
+            Already have an account?{" "}
+            <Link to="/login" className="text-blue-600 hover:underline">Back to login</Link>
+        </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import RefreshPage from "./pages/RefreshPage";
 import LogoutPage from "./pages/LogoutPage";
+import SharePage from "./pages/SharePage";
 import DocumentsList from "./pages/DocumentsList";
 import DocumentCreate from "./pages/DocumentCreate";
 import DocumentDetail from "./pages/DocumentDetail";
@@ -60,6 +61,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           element={
             <ProtectedRoute>
               <DocumentDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/docs/:docId/share"
+          element={
+            <ProtectedRoute>
+              <SharePage />
             </ProtectedRoute>
           }
         />
