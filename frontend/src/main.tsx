@@ -11,7 +11,7 @@ import LogoutPage from "./pages/LogoutPage";
 import DocumentsList from "./pages/DocumentsList";
 import DocumentCreate from "./pages/DocumentCreate";
 import DocumentDetail from "./pages/DocumentDetail";
-// import DocumentEditor from "./pages/DocumentEditor";
+import DocumentEditor from "./pages/DocumentEditor";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -63,14 +63,16 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             </ProtectedRoute>
           }
         />
-        {/* <Route
-          path="/doc/:docId"
-          element={
-            <ProtectedRoute>
-              <DocumentEditor />
-            </ProtectedRoute>
-          }
-        /> */}
+        {
+          <Route
+            path="/doc/:docId"
+            element={
+              <ProtectedRoute>
+                <DocumentEditor />
+              </ProtectedRoute>
+            }
+          />
+        }
 
         {/* fallback */}
         <Route path="*" element={<Home />} />

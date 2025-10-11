@@ -11,6 +11,8 @@ frontend/.vite/
 frontend/coverage/
 frontend/.next/
 frontend/.nuxt/
+frontend/.env
+frontend/.env*.development
 
 # Python (ignore everywhere)
 **/__pycache__/
