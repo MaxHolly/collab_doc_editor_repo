@@ -11,6 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { errorMessage } from "../lib/errors";
 import { searchUsers } from "../lib/users";
 import type { UserSummary } from "../lib/users";
+import Button from "../components/ui/Button";
 
 export default function SharePage() {
   const { docId } = useParams<{ docId: string }>();
@@ -142,12 +143,12 @@ export default function SharePage() {
     <div className="max-w-3xl mx-auto p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl sm:text-2xl font-semibold">Share document</h1>
-        <button
+        <Button
           onClick={() => navigate(`/docs/${docId}`)}
-          className="border rounded px-3 py-2"
+          variant="ghost"
         >
           Back to details
-        </button>
+        </Button>
       </div>
 
       {msg && <div className="text-sm text-red-600">{msg}</div>}
