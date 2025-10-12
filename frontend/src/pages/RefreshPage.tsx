@@ -3,6 +3,7 @@ import { API_BASE } from "../lib/env";
 import { getRefreshToken, setTokens, getAccessToken } from "../lib/auth";
 import { errorMessage } from "../lib/errors";
 import { safeJson } from "../lib/http";
+import { apiFetch } from "../lib/http";
 import Button from "../components/ui/Button";
 
 type RefreshResponse = { access_token?: string; message?: string };
@@ -17,7 +18,7 @@ export default function RefreshPage() {
       return;
     }
     try {
-      const r = await fetch(`${API_BASE}/refresh`, {
+      const r = await apiFetch(`${API_BASE}/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${refresh}` },
       });

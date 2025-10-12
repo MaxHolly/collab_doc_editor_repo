@@ -3,6 +3,7 @@ import { API_BASE } from "../lib/env";
 import { errorMessage } from "../lib/errors";
 import { safeJson } from "../lib/http";
 import { Link } from "react-router-dom";
+import { apiFetch } from "../lib/http";
 import Button from "../components/ui/Button";
 
 
@@ -23,7 +24,7 @@ export default function RegisterPage() {
     setMsg(null);
     setErrors(null);
     try {
-      const r = await fetch(`${API_BASE}/register`, {
+      const r = await apiFetch(`${API_BASE}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

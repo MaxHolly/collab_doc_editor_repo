@@ -4,6 +4,7 @@ import { API_BASE } from "../lib/env";
 import { safeJson } from "../lib/http";
 import { getAccessToken } from "../lib/auth";
 import { errorMessage } from "../lib/errors";
+import { apiFetch } from "../lib/http";
 import Button from "../components/ui/Button";
 
 type MineDoc = {
@@ -36,7 +37,7 @@ export default function DocumentsList() {
     setMsg(null);
     try {
       const token = getAccessToken();
-      const r = await fetch(`${API_BASE}/documents/overview`, {
+      const r = await apiFetch(`${API_BASE}/documents/overview`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token ?? ""}`,
@@ -64,7 +65,7 @@ export default function DocumentsList() {
     setBusyId(id);
     try {
       const token = getAccessToken();
-      const r = await fetch(`${API_BASE}/documents/${id}`, {
+      const r = await apiFetch(`${API_BASE}/documents/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
