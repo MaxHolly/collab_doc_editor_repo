@@ -4,6 +4,8 @@ from flask import Flask
 from dotenv import load_dotenv
 from .extensions import db, jwt, CORS, socketio, limiter
 from datetime import timedelta
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -27,21 +29,35 @@ def create_app():
         JWT_HEADER_NAME="Authorization",
         JWT_HEADER_TYPE="Bearer",
         JWT_ACCESS_TOKEN_EXPIRES=timedelta(minutes=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_MINUTES", "30"))),
-        JWT_REFRESH_TOKEN_EXPIRES=timedelta(days=int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES_DAYS", 30)))
+        JWT_REFRESH_TOKEN_EXPIRES=timedelta(days=int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES_DAYS", 30))),
+        PREFERRED_URL_SCHEME="https",
     )
 
     # Guardrail for missing DB URL in dev
     if not app.config["SQLALCHEMY_DATABASE_URI"]:
         raise RuntimeError("DATABASE_URL not set")
 
-    CORS(app)
+    # trust nginx/x-forwarded-* headers
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+
+    # cors: in prod we run same-origin via Nginx proxy, but keep this for dev
+    cors_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+    CORS(app, resources={r"/api/*": {"origins": cors_origins or "*"}}, supports_credentials=False)
+
     db.init_app(app)
     jwt.init_app(app)
     limiter.init_app(app)
 
-    # Disable Redis/PubSub manager under pytest so the test client can run
-    mq = None # if testing else os.getenv("REDIS_URL")
-    socketio.init_app(app, message_queue=mq, cors_allowed_origins="*", logger=True, engineio_logger=True)
+    # Redis is optional; I skip it to save costs
+    redis_url = None if testing else os.getenv("REDIS_URL") or None
+    socketio.init_app(
+        app,
+        message_queue=redis_url,          # None => single-process (fine for one worker)
+        cors_allowed_origins=cors_origins if cors_origins != ["*"] else "*",
+        async_mode="eventlet",
+        logger=True,
+        engineio_logger=True,
+    )
 
     # Import models/blueprints/handlers
     from . import models  # noqa

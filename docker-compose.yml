@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  # Build static frontend to a shared volume (Nginx serves it)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    command: ["true"]   # build-only
+    volumes:
+      - frontend_static:/usr/share/nginx/html
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: ./.env.prod
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/app.conf:/etc/nginx/conf.d/app.conf:ro
+      - frontend_static:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: appdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  frontend_static:
