@@ -3,6 +3,7 @@ import { API_BASE } from "../lib/env";
 import { getAccessToken, clearTokens } from "../lib/auth";
 import { useNavigate } from "react-router-dom";
 import { safeJson } from "../lib/http";
+import { apiFetch } from "../lib/http";
 
 type MsgResponse = { message?: string };
 
@@ -20,7 +21,7 @@ export default function LogoutPage() {
         return;
       }
       try {
-        const r = await fetch(`${API_BASE}/logout`, {
+        const r = await apiFetch(`${API_BASE}/logout`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${access}` },
         });

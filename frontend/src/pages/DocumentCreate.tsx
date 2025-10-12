@@ -4,6 +4,7 @@ import { getAccessToken } from "../lib/auth";
 import { useNavigate } from "react-router-dom";
 import { errorMessage } from "../lib/errors";
 import { safeJson } from "../lib/http";
+import { apiFetch } from "../lib/http";
 import Button from "../components/ui/Button";
 
 type CreateResponse = { id: number; title: string };
@@ -33,7 +34,7 @@ export default function DocumentCreate() {
         }
       }
       const token = getAccessToken();
-      const r = await fetch(`${API_BASE}/documents`, {
+      const r = await apiFetch(`${API_BASE}/documents`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -4,6 +4,7 @@ import { getAccessToken } from "../lib/auth";
 import { useNavigate, useParams } from "react-router-dom";
 import { errorMessage } from "../lib/errors";
 import { safeJson } from "../lib/http";
+import { apiFetch } from "../lib/http";
 import Button from "../components/ui/Button";
 
 type DocDetail = {
@@ -33,7 +34,7 @@ export default function DocumentDetail() {
     setMsg(null);
     try {
       const token = getAccessToken();
-      const r = await fetch(`${API_BASE}/documents/${id}`, {
+      const r = await apiFetch(`${API_BASE}/documents/${id}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token ?? ""}`,
@@ -79,7 +80,7 @@ export default function DocumentDetail() {
       }
 
       const token = getAccessToken();
-      const r = await fetch(`${API_BASE}/documents/${id}`, {
+      const r = await apiFetch(`${API_BASE}/documents/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -105,7 +106,7 @@ export default function DocumentDetail() {
     if (!confirm("Delete this document?")) return;
     try {
       const token = getAccessToken();
-      const r = await fetch(`${API_BASE}/documents/${id}`, {
+      const r = await apiFetch(`${API_BASE}/documents/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

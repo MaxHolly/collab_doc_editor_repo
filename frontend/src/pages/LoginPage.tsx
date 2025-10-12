@@ -1,6 +1,6 @@
 // src/pages/LoginPage.tsx
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { API_BASE } from "../lib/env";
 import { setTokens } from "../lib/auth";
 import { errorMessage } from "../lib/errors";
@@ -20,6 +20,18 @@ export default function LoginPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const loc = useLocation();
+  const qs = new URLSearchParams(loc.search);
+  const reason = qs.get("reason");
+  const next = qs.get("next") || "/"; // encoded path from redirect guard
+
+  const banner =
+    reason === "expired"
+      ? "Session expired, please log in again."
+      : reason === "invalid"
+      ? "Invalid session, please log in again."
+      : null;
+
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -28,6 +40,7 @@ export default function LoginPage() {
     setBusy(true);
     setMsg(null);
     try {
+      // IMPORTANT: Use plain fetch here (not apiFetch) to avoid "auth redirect" loops on 401
       const r = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -37,12 +50,10 @@ export default function LoginPage() {
       const data = await safeJson<LoginResponse>(r); // LoginResponse | null
 
       if (!r.ok) {
-        // data may be null, so use optional chaining
         setMsg(data?.message ?? `Error ${r.status}`);
         return;
       }
 
-      // runtime narrowing
       if (
         data &&
         typeof data.access_token === "string" &&
@@ -50,7 +61,10 @@ export default function LoginPage() {
         typeof data.user_id === "number"
       ) {
         setTokens(data.access_token, data.refresh_token, data.user_id);
-        navigate("/");
+
+        // Navigate back to the originally requested page (decode "next")
+        const dest = decodeURIComponent(next);
+        navigate(dest || "/", { replace: true });
       } else {
         setMsg("Malformed response from server.");
       }
@@ -64,7 +78,15 @@ export default function LoginPage() {
   return (
     <div className="max-w-md mx-auto p-6 space-y-4">
       <h1 className="text-2xl font-bold">Login</h1>
+
+      {banner && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          {banner}
+        </div>
+      )}
+
       {msg && <div className="text-sm text-red-700">{msg}</div>}
+
       <form onSubmit={submit} className="space-y-3">
         <input
           className="w-full border rounded p-2"
@@ -84,13 +106,11 @@ export default function LoginPage() {
           onChange={onChange}
           required
         />
-        <Button
-          disabled={busy}
-          variant="primary"
-        >
+        <Button disabled={busy} variant="primary">
           {busy ? "Logging in…" : "Login"}
         </Button>
       </form>
+
       <div className="text-sm">
         No account?{" "}
         <Link to="/register" className="text-blue-600 hover:underline">
