@@ -25,12 +25,13 @@ def me_patch():
 @bp_users.get("/users/search")
 @jwt_required()
 def user_search():
+    uid = int(get_jwt_identity())
     q = (request.args.get("q") or "").strip()
     if not q or len(q) < 5:
-        return jsonify([]) # require at least 2 chars for query
+        return jsonify([]) # require at least 5 chars for query
     rows = (
         db.session.query(User.id, User.username, User.email)
-        .filter(User.email.ilike(f"%{q}%"))
+        .filter(User.email.ilike(f"%{q}%"), User.id != uid)
         .order_by(User.email.asc())
         .limit(10)
         .all()

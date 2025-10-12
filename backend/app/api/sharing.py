@@ -57,6 +57,8 @@ def add_collaborator(doc_id):
 
     # upsert
     c = db.session.query(DocumentCollaborator).filter_by(document_id=doc_id, user_id=user_id).first()
+    if user_id == uid:
+        return jsonify(message="Cannot change your own role here"), 400
     if c:
         c.permission_level = level
     else:
@@ -70,10 +72,19 @@ def change_role(doc_id, target_id):
     uid = int(get_jwt_identity())
     if not _owner_required(doc_id, uid):
         return jsonify(message="Only owner can change roles"), 403
+    
     data = request.get_json() or {}
     level = data.get("permission_level")
     if level not in ("viewer", "editor"):
         return jsonify(message="Invalid permission_level"), 400
+    
+    d = db.session.get(Document, doc_id)
+    if not d:
+        return jsonify(message="Not found"), 404
+    
+    if target_id == d.owner_id:
+        return jsonify(message="Cannot change owner's role. Transfer ownership first"), 400
+
     c = db.session.query(DocumentCollaborator).filter_by(document_id=doc_id, user_id=target_id).first()
     if not c:
         return jsonify(message="Not found"), 404
@@ -87,17 +98,48 @@ def transfer_ownership(doc_id):
     uid = int(get_jwt_identity())
     if not _owner_required(doc_id, uid):
         return jsonify(message="Only owner can transfer"), 403
+    
     data = request.get_json() or {}
     new_owner_id = data.get("user_id")
+
+    if not isinstance(new_owner_id, int):
+        return jsonify(message="user_id required"), 400
+
     d = db.session.get(Document, doc_id)
     if not d:
         return jsonify(message="Not found"), 404
-    d.owner_id = new_owner_id
-    # ensure new owner has 'owner' collaborator record if you keep the invariant
-    c = db.session.query(DocumentCollaborator).filter_by(document_id=doc_id, user_id=new_owner_id).first()
-    if c: c.permission_level = "owner"
-    else: db.session.add(DocumentCollaborator(document_id=doc_id, user_id=new_owner_id, permission_level="owner"))
-    db.session.commit()
+    
+    try:
+        with db.session.begin_nested():
+            new_owner_collab = (
+                db.sesion.query(DocumentCollaborator)
+                .filter_by(document_id=doc_id, user_id=new_owner_id)
+                .first()
+            )
+            if new_owner_collab:
+                new_owner_collab.permission_level = "owner"
+            else:
+                db.session.add(DocumentCollaborator(document_id=doc_id, user_id=new_owner_id, permission_level="owner"))
+            
+            # demote old owner's collaborator record if exists but keep access
+            old_owner_collab = (
+                db.session.query(DocumentCollaborator)
+                .filter_by(document_id=doc_id, user_id=uid)
+                .first()
+            )
+            if old_owner_collab:
+                old_owner_collab.permission_level = "editor"
+            else:
+                db.session.add(DocumentCollaborator(document_id=doc_id, user_id=uid, permission_level="editor"))
+            
+            # switch owner
+            d.owner_id = new_owner_id
+        db.session.commit()
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(message="Transfer failed"), 500
+    
     return jsonify(msg="ownership_transferred"), 200
 
 @bp_share.delete("/documents/<int:doc_id>/collaborators/<int:target_id>")
@@ -106,9 +148,18 @@ def remove_collaborator(doc_id, target_id):
     uid = int(get_jwt_identity())
     if not _owner_required(doc_id, uid):
         return jsonify(message="Only owner can remove"), 403
+    
+    d = db.session.get(Document, doc_id)
+    if not d:
+        return jsonify(message="Not found"), 404    
+    
+    if target_id == d.owner_id:
+        return jsonify(message="Cannot remove owner. Transfer ownership first"), 400
+
     c = db.session.query(DocumentCollaborator).filter_by(document_id=doc_id, user_id=target_id).first()
     if not c:
         return jsonify(message="Not found"), 404
+    
     db.session.delete(c)
     db.session.commit()
     return "", 204

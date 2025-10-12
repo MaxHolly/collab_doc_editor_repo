@@ -3,6 +3,7 @@ import { API_BASE } from "../lib/env";
 import { errorMessage } from "../lib/errors";
 import { safeJson } from "../lib/http";
 import { Link } from "react-router-dom";
+import Button from "../components/ui/Button";
 
 
 type ErrorResponse = { message?: string; errors?: unknown };
@@ -54,9 +55,9 @@ export default function RegisterPage() {
         <input className="w-full border rounded p-2" name="username" placeholder="Username" value={form.username} onChange={onChange} required />
         <input className="w-full border rounded p-2" name="email" placeholder="Email" type="email" value={form.email} onChange={onChange} required />
         <input className="w-full border rounded p-2" name="password" placeholder="Password" type="password" value={form.password} onChange={onChange} required />
-        <button disabled={busy} className="w-full bg-blue-600 text-white rounded p-2 hover:bg-blue-700 disabled:opacity-60">
+        <Button disabled={busy} variant="primary">
           {busy ? "Creating…" : "Create account"}
-        </button>
+        </Button>
       </form>
         <div className="text-sm">
             Already have an account?{" "}
