@@ -15,15 +15,11 @@ from app.decorators.socketio_auth import (
 def handle_connect():
     from flask import request, current_app
     current_app.logger.info("WS connect query args: %s", dict(request.args))
-    ok = ws_on_connect_auth()
-    if not ok:
+    uid = ws_on_connect_auth()
+    if not uid:
         current_app.logger.info("WS connect refused (auth failed)")
         return False
-
-
-@socketio.on("disconnect")
-def handle_disconnect():
-    ws_on_disconnect_cleanup()
+    join_room(f"user_{uid}")
 
 
 @socketio.on("join_document")
