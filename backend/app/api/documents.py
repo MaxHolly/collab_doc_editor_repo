@@ -43,6 +43,7 @@ def create_document():
     db.session.commit()
     return jsonify({"id": doc.id, "title": doc.title, "description": doc.description}), 201
 
+# TODO: remove old documents view before production deploy
 @bp.get("/documents")
 @jwt_required()
 def list_documents():

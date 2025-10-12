@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 
+import BaseLayout from "./components/layout/BaseLayout";
 import Home from "./pages/Home";
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
@@ -19,72 +20,76 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route element={<BaseLayout />}>
+          <Route index element={<DocumentsList />} />
+        
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* protected */}
-        <Route
-          path="/refresh"
-          element={
-            <ProtectedRoute>
-              <RefreshPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/logout"
-          element={
-            <ProtectedRoute>
-              <LogoutPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/docs"
-          element={
-            <ProtectedRoute>
-              <DocumentsList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/docs/new"
-          element={
-            <ProtectedRoute>
-              <DocumentCreate />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/docs/:docId"
-          element={
-            <ProtectedRoute>
-              <DocumentDetail />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/docs/:docId/share"
-          element={
-            <ProtectedRoute>
-              <SharePage />
-            </ProtectedRoute>
-          }
-        />
-        {
+
+          {/* protected */}
           <Route
-            path="/doc/:docId"
+            path="/refresh"
             element={
               <ProtectedRoute>
-                <DocumentEditor />
+                <RefreshPage />
               </ProtectedRoute>
             }
           />
-        }
+          <Route
+            path="/logout"
+            element={
+              <ProtectedRoute>
+                <LogoutPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/docs"
+            element={
+              <ProtectedRoute>
+                <DocumentsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/docs/new"
+            element={
+              <ProtectedRoute>
+                <DocumentCreate />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/docs/:docId"
+            element={
+              <ProtectedRoute>
+                <DocumentDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/docs/:docId/share"
+            element={
+              <ProtectedRoute>
+                <SharePage />
+              </ProtectedRoute>
+            }
+          />
+          {
+            <Route
+              path="/doc/:docId"
+              element={
+                <ProtectedRoute>
+                  <DocumentEditor />
+                </ProtectedRoute>
+              }
+            />
+          }
 
-        {/* fallback */}
-        <Route path="*" element={<Home />} />
+          {/* fallback */}
+          <Route path="*" element={<Home />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

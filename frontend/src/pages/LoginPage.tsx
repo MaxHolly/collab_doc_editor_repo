@@ -5,6 +5,7 @@ import { API_BASE } from "../lib/env";
 import { setTokens } from "../lib/auth";
 import { errorMessage } from "../lib/errors";
 import { safeJson } from "../lib/http";
+import Button from "../components/ui/Button";
 
 type LoginResponse = {
   access_token: string;
@@ -83,12 +84,12 @@ export default function LoginPage() {
           onChange={onChange}
           required
         />
-        <button
+        <Button
           disabled={busy}
-          className="w-full bg-blue-600 text-white rounded p-2 hover:bg-blue-700 disabled:opacity-60"
+          variant="primary"
         >
           {busy ? "Logging in…" : "Login"}
-        </button>
+        </Button>
       </form>
       <div className="text-sm">
         No account?{" "}

@@ -3,6 +3,7 @@ import { API_BASE } from "../lib/env";
 import { getRefreshToken, setTokens, getAccessToken } from "../lib/auth";
 import { errorMessage } from "../lib/errors";
 import { safeJson } from "../lib/http";
+import Button from "../components/ui/Button";
 
 type RefreshResponse = { access_token?: string; message?: string };
 
@@ -37,9 +38,9 @@ export default function RefreshPage() {
   return (
     <div className="max-w-md mx-auto p-6 space-y-3">
       <h1 className="text-2xl font-bold">Refresh Access Token</h1>
-      <button className="bg-emerald-600 text-white px-3 py-2 rounded hover:bg-emerald-700" onClick={refreshNow}>
+      <Button variant="primary" onClick={refreshNow}>
         Refresh now
-      </button>
+      </Button>
       {msg && <div className="text-sm text-blue-700">{msg}</div>}
       <pre className="text-xs bg-gray-50 p-2 rounded overflow-auto">access: {getAccessToken() || "(none)"}</pre>
     </div>

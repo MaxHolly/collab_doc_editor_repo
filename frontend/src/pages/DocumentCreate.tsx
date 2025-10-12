@@ -4,6 +4,7 @@ import { getAccessToken } from "../lib/auth";
 import { useNavigate } from "react-router-dom";
 import { errorMessage } from "../lib/errors";
 import { safeJson } from "../lib/http";
+import Button from "../components/ui/Button";
 
 type CreateResponse = { id: number; title: string };
 type ErrorResponse = { message?: string; errors?: unknown };
@@ -86,19 +87,20 @@ export default function DocumentCreate() {
           onChange={(e) => setContentText(e.target.value)}
         />
         <div className="flex gap-2">
-          <button
+          <Button
             disabled={busy}
-            className="bg-blue-600 text-white rounded px-3 py-2 hover:bg-blue-700 disabled:opacity-60"
+            type="submit"
           >
             {busy ? "Creating…" : "Create"}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => navigate("/docs")}
-            className="border rounded px-3 py-2"
+            disabled={busy}
           >
             Cancel
-          </button>
+          </Button>
         </div>
       </form>
     </div>

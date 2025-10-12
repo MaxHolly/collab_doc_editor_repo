@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import Button from "../components/ui/Button";
 import Quill from "quill";
 import { io, Socket } from "socket.io-client";
 import "quill/dist/quill.snow.css";
@@ -149,12 +150,12 @@ export default function DocumentEditor() {
     <div className="max-w-4xl mx-auto p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl sm:text-2xl font-semibold">{title || "Untitled"}</h1>
-        <button
+        <Button
           onClick={() => navigate(`/docs/${docId}`)}
-          className="border rounded px-3 py-2"
+          variant="ghost"
         >
           Back to details
-        </button>
+        </Button>
       </div>
 
       {loading && <div className="text-sm text-gray-500">Loading document…</div>}

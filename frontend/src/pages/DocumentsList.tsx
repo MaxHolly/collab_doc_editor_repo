@@ -4,6 +4,7 @@ import { API_BASE } from "../lib/env";
 import { safeJson } from "../lib/http";
 import { getAccessToken } from "../lib/auth";
 import { errorMessage } from "../lib/errors";
+import Button from "../components/ui/Button";
 
 type MineDoc = {
   id: number;
@@ -112,25 +113,25 @@ export default function DocumentsList() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Link
-                to={`/doc/${d.id}`}
-                className="text-sm px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+              <Button
+                onClick={() => navigate(`/doc/${d.id}`)}
+                variant="primary"
               >
                 Open editor
-              </Link>
-              <Link
-                to={`/docs/${d.id}/share`}
-                className="text-sm px-2 py-1 rounded border hover:bg-gray-50"
+              </Button>
+              <Button
+                onClick={() => navigate(`/docs/${d.id}/share`)}
+                variant="secondary"
               >
                 Share
-              </Link>
-              <button
+              </Button>
+              <Button
                 disabled={busyId === d.id}
                 onClick={() => delDoc(d.id)}
-                className="text-sm px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                variant="danger"
               >
                 {busyId === d.id ? "Deleting…" : "Delete"}
-              </button>
+              </Button>
             </div>
           </li>
         ))}
@@ -162,12 +163,12 @@ export default function DocumentsList() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Link
-                  to={`/doc/${d.id}`}
-                  className="text-sm px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                <Button
+                  onClick={() => navigate(`/doc/${d.id}`)}
+                  variant="primary"
                 >
                   Open editor
-                </Link>
+                </Button>
                 {/* No Share/Delete here; only owners can share/remove */}
               </div>
             </li>

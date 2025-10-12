@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { API_BASE } from "../lib/env";
 import { getAccessToken } from "../lib/auth";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { errorMessage } from "../lib/errors";
 import { safeJson } from "../lib/http";
+import Button from "../components/ui/Button";
 
 type DocDetail = {
   id: number;
@@ -130,27 +131,30 @@ export default function DocumentDetail() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Document #{doc.id}: {title}</h1>
         <div className="flex gap-2">
-          <Link
-            to={`/doc/${doc.id}`}
-            className="px-3 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+          <Button
+            onClick={() => navigate(`/doc/${doc.id}`)}
+            type="button"
+            variant="primary"
           >
             Open editor
-          </Link>
+          </Button>
           {canShare && (
-            <Link
-                to={`/docs/${doc.id}/share`}
-                className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+            <Button
+                onClick={() => navigate(`/docs/${doc.id}/share`)}
+                type="button"
+                variant="secondary"
             >
                 Share
-            </Link>
+            </Button>
           )}
           {canShare && (
-          <button
+          <Button
+            variant="danger"
+            type="button"
             onClick={destroy}
-            className="px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700"
           >
             Delete
-          </button>
+          </Button>
         )}
         </div>
       </div>
@@ -185,16 +189,16 @@ export default function DocumentDetail() {
         />
 
         <div className="flex gap-2">
-          <button
+          <Button
             disabled={saving}
             onClick={save}
-            className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+            variant="secondary"
           >
             {saving ? "Saving…" : "Save"}
-          </button>
-          <button onClick={() => navigate("/docs")} className="px-3 py-2 rounded border">
+          </Button>
+          <Button onClick={() => navigate("/docs")} variant="ghost">
             Back to list
-          </button>
+          </Button>
         </div>
       </div>
     </div>
