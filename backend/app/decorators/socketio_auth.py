@@ -26,18 +26,11 @@ def _extract_token_from_handshake() -> Optional[str]:
     return None
 
 
-def ws_on_connect_auth() -> bool:
-    """
-    Authenticate during Socket.IO 'connect'.
-    Decodes the JWT using PyJWT + app's JWT_SECRET_KEY.
-    Stores user_id mapped to this request.sid.
-    Returns True on success, False to refuse connection.
-    """
+def ws_on_connect_auth() -> Optional[int]:
     token = _extract_token_from_handshake()
     if not token:
         current_app.logger.debug("WS connect: missing token")
-        return False
-
+        return None
     try:
         payload = jwt.decode(
             token,
@@ -48,11 +41,11 @@ def ws_on_connect_auth() -> bool:
         uid = int(payload["sub"])
     except Exception as e:
         current_app.logger.debug("WS connect: JWT decode failed: %s", e)
-        return False
+        return None
 
     _SID_USER[request.sid] = uid
     current_app.logger.debug("WS connect OK: sid=%s uid=%s", request.sid, uid)
-    return True
+    return uid
 
 
 def ws_on_disconnect_cleanup() -> None:

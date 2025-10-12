@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from app.extensions import db
+from app.extensions import db, socketio
 from app.models import Document, DocumentCollaborator, User
 
 bp_share = Blueprint("share", __name__)
@@ -15,10 +15,17 @@ def _owner_required(doc_id: int, uid: int) -> bool:
 @jwt_required()
 def list_collaborators(doc_id):
     uid = int(get_jwt_identity())
-    # allow owner or any collaborator to view
-    collab = db.session.query(DocumentCollaborator).filter_by(document_id=doc_id, user_id=uid).first()
-    if not collab:
-        return jsonify(message="Access denied"), 403
+    d = db.session.get(Document, doc_id)
+    if not d:
+        return jsonify(message="Not found"), 404
+    if d.owner_id != uid:
+        collab = (
+            db.session.query(DocumentCollaborator)
+            .filter_by
+            .first()
+        )
+        if not collab:
+            return jsonify(message="Access denied"), 403
 
     rows = (
         db.session.query(DocumentCollaborator, User.username, User.email)
@@ -64,6 +71,21 @@ def add_collaborator(doc_id):
     else:
         db.session.add(DocumentCollaborator(document_id=doc_id, user_id=user_id, permission_level=level))
     db.session.commit()
+
+    # emit real-time update to the added/updated collaborator if connected
+    doc = db.session.get(Document, doc_id)
+    socketio.emit(
+        "notify",
+        {
+            "type": "share_added",
+            "doc_id": doc_id,
+            "title": doc.title if doc else "",
+            "permission_level": level,
+            "by_user_id": uid,
+        },
+        to=f"user_{user_id}"
+    )
+
     return jsonify(msg="shared"), 200
 
 @bp_share.patch("/documents/<int:doc_id>/collaborators/<int:target_id>")
@@ -90,6 +112,21 @@ def change_role(doc_id, target_id):
         return jsonify(message="Not found"), 404
     c.permission_level = level
     db.session.commit()
+
+    # emit real-time update to the collaborator if connected
+    socketio.emit(
+        "notify",
+        {
+            "type": "share_role_changed",
+            "doc_id": doc_id,
+            "title": d.title,
+            "permission_level": level,
+            "by_user_id": uid,
+            "target_user_id": target_id,
+        },
+        to=f"user_{target_id}",
+    )
+
     return jsonify(msg="updated"), 200
 
 @bp_share.post("/documents/<int:doc_id>/transfer_ownership")
@@ -112,7 +149,7 @@ def transfer_ownership(doc_id):
     try:
         with db.session.begin_nested():
             new_owner_collab = (
-                db.sesion.query(DocumentCollaborator)
+                db.session.query(DocumentCollaborator)
                 .filter_by(document_id=doc_id, user_id=new_owner_id)
                 .first()
             )
@@ -135,6 +172,30 @@ def transfer_ownership(doc_id):
             # switch owner
             d.owner_id = new_owner_id
         db.session.commit()
+
+        # emit real-time update to the new owner if connected
+        socketio.emit(
+            "notify",
+            {
+                "type": "ownership_gained",
+                "doc_id": doc_id,
+                "title": d.title,
+                "by_user_id": uid,
+            },
+            to=f"user_{new_owner_id}",
+        )
+
+        # emit real-time update to the old owner if connected
+        socketio.emit(
+            "notify",
+            {
+                "type": "ownership_lost",
+                "doc_id": doc_id,
+                "title": d.title,
+                "by_user_id": uid,
+            },
+            to=f"user_{uid}",
+        )
     
     except Exception as e:
         db.session.rollback()
@@ -162,4 +223,17 @@ def remove_collaborator(doc_id, target_id):
     
     db.session.delete(c)
     db.session.commit()
+
+    # emit real-time update to the removed collaborator if connected
+    socketio.emit(
+        "notify",
+        {
+            "type": "share_removed",
+            "doc_id": doc_id,
+            "title": d.title,
+            "by_user_id": uid,
+        },
+        to=f"user_{target_id}",
+    )
+
     return "", 204
