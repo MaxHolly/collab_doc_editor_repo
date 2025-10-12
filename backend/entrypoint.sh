@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
+# just one worker for cheap setup; if Redis added, increase workers
 set -euo pipefail
 alembic upgrade head
-exec gunicorn -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker \
-  -w "${WORKERS:-1}" -b 0.0.0.0:8000 wsgi:app
+exec gunicorn \
+  --worker-class eventlet \
+  --workers "${WORKERS:-1}" \ 
+  --bind 0.0.0.0:8000 \
+  --access-logfile - \
+  --error-logfile - \
+  wsgi:app
