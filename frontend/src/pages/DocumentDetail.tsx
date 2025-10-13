@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { API_BASE } from "../lib/env";
 import { getAccessToken } from "../lib/auth";
 import { useNavigate, useParams } from "react-router-dom";
