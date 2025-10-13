@@ -9,6 +9,18 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
+def _parse_origins(val: str | None, default="*"):
+    """
+    Accepts None / "" / "*" / "http://a,https://b"
+    Returns "*" or a list[str] of exact origins.
+    """
+    if not val:
+        return default
+    val = val.strip()
+    if val == "*" or val == "":
+        return "*"
+    return [o.strip() for o in val.split(",") if o.strip()]
+
 def create_app():
     app = Flask(__name__)
 
@@ -30,7 +42,7 @@ def create_app():
         JWT_HEADER_TYPE="Bearer",
         JWT_ACCESS_TOKEN_EXPIRES=timedelta(minutes=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_MINUTES", "30"))),
         JWT_REFRESH_TOKEN_EXPIRES=timedelta(days=int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES_DAYS", 30))),
-        PREFERRED_URL_SCHEME="https",
+        PREFERRED_URL_SCHEME=os.getenv("PREFERRED_URL_SCHEME", "http"),
     )
 
     # Guardrail for missing DB URL in dev
@@ -41,19 +53,24 @@ def create_app():
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
     # cors: in prod we run same-origin via Nginx proxy, but keep this for dev
-    cors_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
-    CORS(app, resources={r"/api/*": {"origins": cors_origins or "*"}}, supports_credentials=False)
+    cors_origins_env = os.getenv("CORS_ORIGINS")
+    api_cors = _parse_origins(cors_origins_env, "*")
+    CORS(app, resources={r"/api/*": {"origins": api_cors}}, supports_credentials=False)
 
     db.init_app(app)
     jwt.init_app(app)
     limiter.init_app(app)
+
+    # socket.io: set exact accepted origins indepentently from REST CORS
+    sio_origins_env = os.getenv("SOCKETIO_CORS_ORIGINS")
+    sio_cors = _parse_origins(sio_origins_env, api_cors)
 
     # Redis is optional; I skip it to save costs
     redis_url = None if testing else os.getenv("REDIS_URL") or None
     socketio.init_app(
         app,
         message_queue=redis_url,          # None => single-process (fine for one worker)
-        cors_allowed_origins=cors_origins if cors_origins != ["*"] else "*",
+        cors_allowed_origins=sio_cors,
         async_mode="eventlet",
         logger=True,
         engineio_logger=True,
