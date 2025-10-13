@@ -201,9 +201,15 @@ export default function Navbar() {
   return (
     <div className="sticky top-0 z-40 border-b bg-white/80 backdrop-blur">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Link to="/" className="text-lg font-semibold text-slate-900">
-            ✨ CollabDocs
+            <img 
+              src="/tutu_ordering_documents_1024.png" 
+              width={40}
+              height={40}
+              draggable={false}
+              className="h-10 w-10 md:h-11 md:w-11" 
+            />
           </Link>
           {authed && (
             <>
