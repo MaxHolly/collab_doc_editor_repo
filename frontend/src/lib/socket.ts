@@ -4,10 +4,7 @@ import { getAccessToken, isTokenExpired, logoutAndRedirect } from "./auth";
 
 let socket: Socket | null = null;
 
-type ServerErrorPayload = {
-  message?: string;
-};
-
+type ServerErrorPayload = { message?: string };
 type ClientDisconnectReason =
   | "io server disconnect"
   | "io client disconnect"
@@ -16,37 +13,47 @@ type ClientDisconnectReason =
   | "transport error"
   | "parse error";
 
+export function refreshSocketAuth(): void {
+  if (!socket) return;
+  const t = getAccessToken();
+  if (t) (socket.io.opts.query as Record<string, string>) = { token: t };
+}
+
 export function getAppSocket(): Socket | null {
   if (socket) return socket;
 
   const token = getAccessToken();
   if (!token) return null;
-
-  // Proactive client-side expiry check
   if (isTokenExpired(token)) {
     logoutAndRedirect("expired");
     return null;
   }
 
   socket = io(SOCKET_URL || window.location.origin, {
+    path: "/socket.io",                // must match nginx location
+    transports: ["websocket", "polling"],
     query: { token },
     withCredentials: false,
-    autoConnect: true,
     reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 500,
+    reconnectionDelayMax: 5000,
+    timeout: 20000,
+    autoConnect: true,
+    forceNew: false,
   });
 
-  // Server rejected handshake (often expired/invalid token)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  socket.on("connect_error", (_err: Error) => {
-    const t = getAccessToken();
-    if (!t || isTokenExpired(t)) {
-      logoutAndRedirect("expired");
-    } else {
-      logoutAndRedirect("invalid");
-    }
+  // Always refresh the token used for the next attempt
+  socket.io.on("reconnect_attempt", () => refreshSocketAuth());
+
+  // IMPORTANT: do NOT log the user out just because the socket can't connect.
+  // Network/proxy hiccups are common; let API auth be the source of truth.
+  socket.on("connect_error", () => {
+    // no redirect here
+    // you can console.warn if you like
   });
 
-  // Backend may emit "error" events like { message: "unauthenticated" }
+  // Only log out if the server *tells us* we're unauthenticated
   socket.on("error", (payload: ServerErrorPayload) => {
     const msg = payload?.message ?? "";
     if (/unauthenticated|invalid token|expired/i.test(msg)) {
@@ -55,7 +62,6 @@ export function getAppSocket(): Socket | null {
   });
 
   socket.on("disconnect", (reason: ClientDisconnectReason) => {
-    // If server explicitly disconnected us, check token status
     if (reason === "io server disconnect") {
       const t = getAccessToken();
       if (!t || isTokenExpired(t)) logoutAndRedirect("expired");
@@ -65,11 +71,6 @@ export function getAppSocket(): Socket | null {
   return socket;
 }
 
-// helpful if you log out
 export function closeAppSocket(): void {
-  try {
-    socket?.disconnect();
-  } finally {
-    socket = null;
-  }
+  try { socket?.disconnect(); } finally { socket = null; }
 }
