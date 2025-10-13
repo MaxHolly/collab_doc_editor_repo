@@ -15,13 +15,14 @@ import DocumentCreate from "./pages/DocumentCreate";
 import DocumentDetail from "./pages/DocumentDetail";
 import DocumentEditor from "./pages/DocumentEditor";
 import ProtectedRoute from "./components/ProtectedRoute";
+import IndexGate from "./components/IndexGate";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
         <Route element={<BaseLayout />}>
-          <Route index element={<DocumentsList />} />
+          <Route index element={<IndexGate />} />
         
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
