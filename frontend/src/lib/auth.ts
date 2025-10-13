@@ -5,7 +5,9 @@ export function setTokens(access: string, refresh: string, userId: number | stri
 }
 
 export function getAccessToken(): string | null {
-  return localStorage.getItem("access_token");
+  const raw = localStorage.getItem("access_token");
+  if (!raw || raw === "null" || raw === "undefined") return null;
+  return raw;
 }
 
 export function getRefreshToken(): string | null {
@@ -41,8 +43,13 @@ export function isTokenExpired(token?: string | null, skewSeconds = 15): boolean
 
 // Make isAuthed stricter: token exists AND not expired
 export function isAuthed(): boolean {
-  const token = getAccessToken();
-  return !!token && !isTokenExpired(token);
+  const t = getAccessToken();
+  if (!t) return false;
+  try {
+    return !isTokenExpired(t);
+  } catch {
+    return false; // malformed JWT, treat as unauthenticated
+  }
 }
 
 // Centralized logout + redirect with reason and return path.

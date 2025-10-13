@@ -5,5 +5,8 @@ RUN pip install --no-cache-dir pip==24.2
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend .
-RUN chmod +x /app/entrypoint.sh
-CMD ["bash","-lc","./entrypoint.sh"]
+RUN apt-get update && apt-get install -y --no-install-recommends dos2unix \
+ && dos2unix entrypoint.sh \
+ && chmod +x entrypoint.sh \
+ && rm -rf /var/lib/apt/lists/*
+ CMD ["bash","-lc","./entrypoint.sh"]

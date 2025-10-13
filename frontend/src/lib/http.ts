@@ -25,5 +25,19 @@ export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {})
     logoutAndRedirect(looksExpired ? "expired" : "invalid");
     throw new Error("AUTH_REDIRECT");
   }
+
+  // Handle 422 with invalid token messages from backend
+  if (resp.status === 422) {
+    try {
+      const body = await resp.clone().json();
+      const msg = (body?.message ?? body?.detail ?? "").toString().toLowerCase();
+      if (msg.includes("invalid token") || msg.includes("not enough segments") || msg.includes("bad authorization header")) {
+        logoutAndRedirect("invalid");
+        throw new Error("AUTH_REDIRECT");
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+  }
   return resp;
 }

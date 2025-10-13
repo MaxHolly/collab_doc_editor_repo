@@ -6,6 +6,7 @@ import { isAuthed, getAccessToken } from "../../lib/auth";
 import { API_BASE } from "../../lib/env";
 import { safeJson } from "../../lib/http";
 import { getAppSocket } from "../../lib/socket";
+import { apiFetch } from "../../lib/http";
 
 type SharedDoc = {
   id: number;
@@ -69,7 +70,7 @@ export default function Navbar() {
   async function refreshSharedOverview() {
     const access = getAccessToken();
     if (!access) return;
-    const r = await fetch(`${API_BASE}/documents/overview`, {
+    const r = await apiFetch(`${API_BASE}/documents/overview`, {
       headers: { Authorization: `Bearer ${access}` },
     });
     const data = await safeJson<OverviewResponse>(r);
