@@ -1,10 +1,11 @@
 import os
 from pathlib import Path
-from flask import Flask
+from flask import Flask, jsonify
 from dotenv import load_dotenv
 from .extensions import db, jwt, CORS, socketio, limiter
 from datetime import timedelta
 from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_limiter.errors import RateLimitExceeded
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -44,6 +45,8 @@ def create_app():
         JWT_REFRESH_TOKEN_EXPIRES=timedelta(days=int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES_DAYS", 30))),
         PREFERRED_URL_SCHEME=os.getenv("PREFERRED_URL_SCHEME", "http"),
     )
+    # enable show ratelimit headers
+    app.config.update(RATELIMIT_HEADERS_ENABLED=True)
 
     # Guardrail for missing DB URL in dev
     if not app.config["SQLALCHEMY_DATABASE_URI"]:
@@ -113,6 +116,17 @@ def create_app():
     @jwt.unauthorized_loader
     def _missing_token_response(err_msg):
         return {"message": "Missing token", "detail": err_msg}, 401
+    
+    # app routes
+    @app.errorhandler(RateLimitExceeded)
+    def handle_429(e: RateLimitExceeded):
+        resp = jsonify(
+            message="Too many requests. Please wait a moment and try again.",
+            detail=str(e),  # includes which limit was hit for logging
+        )
+        resp.status_code = 429
+        return resp
+
 
     @app.get("/health")
     def health():

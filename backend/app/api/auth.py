@@ -9,7 +9,7 @@ from .utils import _ve_to_json
 bp = Blueprint("auth", __name__)
 
 @bp.post("/register")
-@limiter.limit("5 per minute")
+@limiter.limit("10/minute; 50/hour")
 def register():
     try:
         data = RegisterSchema.model_validate(request.get_json() or {})
@@ -27,7 +27,7 @@ def register():
     return jsonify({"message": "registered"}), 201
 
 @bp.post("/login")
-@limiter.limit("3 per minute")
+@limiter.limit("30/minute; 300/hour")
 def login():
     try:
         data = LoginSchema.model_validate(request.get_json() or {})
