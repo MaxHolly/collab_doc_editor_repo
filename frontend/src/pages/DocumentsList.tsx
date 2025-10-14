@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { API_BASE } from "../lib/env";
-import { safeJson } from "../lib/http";
-import { getAccessToken } from "../lib/auth";
-import { errorMessage } from "../lib/errors";
-import { apiFetch } from "../lib/http";
 import Button from "../components/ui/Button";
+import { API_BASE } from "../lib/env";
+import { apiFetch, safeJson } from "../lib/http";
+import { errorMessage } from "../lib/errors";
 
 type MineDoc = {
   id: number;
@@ -27,60 +25,58 @@ type OverviewResponse = {
   shared_with_me: SharedDoc[];
 };
 
+type Me = { id: number; email?: string; username?: string };
+
 export default function DocumentsList() {
   const [data, setData] = useState<OverviewResponse | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [me, setMe] = useState<Me | null>(null);
   const navigate = useNavigate();
 
-  async function load() {
-    setMsg(null);
-    try {
-      const token = getAccessToken();
-      const r = await apiFetch(`${API_BASE}/documents/overview`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token ?? ""}`,
-        },
-      });
-      const body = await safeJson<OverviewResponse>(r);
-      if (!r.ok) {
-        setMsg(`Error ${r.status}`);
-        setData({ mine: [], shared_with_me: [] });
-        return;
-      }
-      setData(body ?? { mine: [], shared_with_me: [] });
-    } catch (e: unknown) {
-      setMsg(errorMessage(e));
-      setData({ mine: [], shared_with_me: [] });
-    }
-  }
-
   useEffect(() => {
-    load();
+    // load "me"
+    (async () => {
+      try {
+        const r = await apiFetch(`${API_BASE}/me`);
+        const body = await safeJson<Me>(r);
+        if (r.ok && body) setMe(body);
+      } catch {
+        // ignore; keep generic title
+      }
+    })();
+
+    // load docs overview
+    (async () => {
+      setMsg(null);
+      try {
+        const r = await apiFetch(`${API_BASE}/documents/overview`);
+        const body = await safeJson<OverviewResponse>(r);
+        if (!r.ok) {
+          setMsg(`Error ${r.status}`);
+          setData({ mine: [], shared_with_me: [] });
+          return;
+        }
+        setData(body ?? { mine: [], shared_with_me: [] });
+      } catch (e: unknown) {
+        setMsg(errorMessage(e));
+        setData({ mine: [], shared_with_me: [] });
+      }
+    })();
   }, []);
 
   async function delDoc(id: number) {
     if (!confirm("Delete this document? This cannot be undone.")) return;
     setBusyId(id);
     try {
-      const token = getAccessToken();
-      const r = await apiFetch(`${API_BASE}/documents/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token ?? ""}`,
-        },
-      });
+      const r = await apiFetch(`${API_BASE}/documents/${id}`, { method: "DELETE" });
       if (r.status === 204) {
         setData((prev) =>
-          prev
-            ? { ...prev, mine: prev.mine.filter((d) => d.id !== id) }
-            : prev
+          prev ? { ...prev, mine: prev.mine.filter((d) => d.id !== id) } : prev
         );
       } else {
-        const data = await safeJson<{ message?: string }>(r);
-        alert(data?.message ?? `Delete failed (${r.status})`);
+        const body = await safeJson<{ message?: string }>(r);
+        alert(body?.message ?? `Delete failed (${r.status})`);
       }
     } catch (e: unknown) {
       alert(errorMessage(e));
@@ -108,29 +104,17 @@ export default function DocumentsList() {
               <div className="text-xs text-gray-500">
                 Updated {new Date(d.updated_at).toLocaleString()}
                 {" · "}
-                {d.shared_count > 0
-                  ? `Shared with ${d.shared_count}`
-                  : "Private"}
+                {d.shared_count > 0 ? `Shared with ${d.shared_count}` : "Private"}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                onClick={() => navigate(`/doc/${d.id}`)}
-                variant="primary"
-              >
+              <Button onClick={() => navigate(`/doc/${d.id}`)} variant="primary">
                 Open editor
               </Button>
-              <Button
-                onClick={() => navigate(`/docs/${d.id}/share`)}
-                variant="secondary"
-              >
+              <Button onClick={() => navigate(`/docs/${d.id}/share`)} variant="secondary">
                 Share
               </Button>
-              <Button
-                disabled={busyId === d.id}
-                onClick={() => delDoc(d.id)}
-                variant="danger"
-              >
+              <Button disabled={busyId === d.id} onClick={() => delDoc(d.id)} variant="danger">
                 {busyId === d.id ? "Deleting…" : "Delete"}
               </Button>
             </div>
@@ -164,13 +148,9 @@ export default function DocumentsList() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => navigate(`/doc/${d.id}`)}
-                  variant="primary"
-                >
+                <Button onClick={() => navigate(`/doc/${d.id}`)} variant="primary">
                   Open editor
                 </Button>
-                {/* No Share/Delete here; only owners can share/remove */}
               </div>
             </li>
           );
@@ -179,10 +159,17 @@ export default function DocumentsList() {
     );
   };
 
+  const heading =
+    me?.username
+      ? `${me.username}'s documents`
+      : me?.email
+      ? `${me.email}'s documents`
+      : "Documents";
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Documents</h1>
+        <h1 className="text-2xl font-bold">{heading}</h1>
         <button
           onClick={() => navigate("/docs/new")}
           className="bg-blue-600 text-white rounded px-3 py-2 hover:bg-blue-700"

@@ -27,7 +27,7 @@ type NotifyEvent =
       doc_id: number;
       title: string;
       permission_level: "viewer" | "editor";
-      by_user_id: number;
+      by_user: { id: number; username?: string; email?: string };
     }
   | {
       type: "share_role_changed";
@@ -96,6 +96,7 @@ export default function Navbar() {
         switch (evt.type) {
           case "share_added": {
             // Upsert
+            const owner = { id: evt.by_user.id, username: evt.by_user.username, email: evt.by_user.email };
             const exists = prev.find((d) => d.id === evt.doc_id);
             if (exists) {
               // Update title/permission
@@ -112,7 +113,7 @@ export default function Navbar() {
               title: evt.title,
               updated_at: new Date().toISOString(),
               permission_level: evt.permission_level,
-              owner: { id: evt.by_user_id }, // we may enrich on next overview refresh
+              owner, 
             };
             return [newDoc, ...prev];
           }
