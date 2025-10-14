@@ -49,6 +49,13 @@ services:
       timeout: 3s
       retries: 10
       start_period: 5s
+  
+  mailpit: # only used for dev testing; remove in prod
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025" # Web UI
+      - "1025:1025" # SMTP
+    restart: unless-stopped
 
 volumes:
   pgdata:
