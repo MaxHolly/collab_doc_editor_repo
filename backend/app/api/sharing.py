@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db, socketio
 from app.models import Document, DocumentCollaborator, User
+from app.emailer import send_share_email_bg
 
 bp_share = Blueprint("share", __name__)
 
@@ -21,7 +22,7 @@ def list_collaborators(doc_id):
     if d.owner_id != uid:
         collab = (
             db.session.query(DocumentCollaborator)
-            .filter_by
+            .filter_by(document_id=doc_id, user_id=uid)
             .first()
         )
         if not collab:
@@ -49,18 +50,18 @@ def add_collaborator(doc_id):
     level = data.get("permission_level", "viewer")
     if level not in ("viewer", "editor"):
         return jsonify(message="Invalid permission_level"), 400
-    
-    # allow email in addition to user_id
+
     user_id = data.get("user_id")
     email = data.get("email")
     if not user_id and not email:
         return jsonify(message="user_id or email required"), 400
-    
+
+    invitee: User | None = None
     if email and not user_id:
-        user = db.session.query(User).filter_by(email=email).first()
-        if not user:
+        invitee = db.session.query(User).filter_by(email=email).first()
+        if not invitee:
             return jsonify(message="User with this email not found"), 404
-        user_id = user.id
+        user_id = invitee.id
 
     # upsert
     c = db.session.query(DocumentCollaborator).filter_by(document_id=doc_id, user_id=user_id).first()
@@ -72,8 +73,11 @@ def add_collaborator(doc_id):
         db.session.add(DocumentCollaborator(document_id=doc_id, user_id=user_id, permission_level=level))
     db.session.commit()
 
-    # emit real-time update to the added/updated collaborator if connected
     doc = db.session.get(Document, doc_id)
+    inviter = db.session.get(User, uid)
+    invitee = invitee or db.session.get(User, user_id)
+
+    # richer socket payload (includes inviter info)
     socketio.emit(
         "notify",
         {
@@ -81,10 +85,21 @@ def add_collaborator(doc_id):
             "doc_id": doc_id,
             "title": doc.title if doc else "",
             "permission_level": level,
-            "by_user_id": uid,
+            "by_user": {
+                "id": inviter.id if inviter else uid,
+                "username": inviter.username if inviter else None,
+                "email": inviter.email if inviter else None,
+            },
         },
-        to=f"user_{user_id}"
+        room=f"user_{user_id}",
     )
+
+    # email (fire & forget)
+    invitee_email = (invitee.email if invitee else email)
+    invitee_name  = (invitee.username if invitee and invitee.username else None)
+    inviter_name  = (inviter.username or inviter.email) if inviter else "Someone"
+    if invitee_email:
+        send_share_email_bg(invitee_email, doc.title if doc else "", inviter_name, doc_id=doc_id, recipient_name=invitee_name)
 
     return jsonify(msg="shared"), 200
 
@@ -124,7 +139,7 @@ def change_role(doc_id, target_id):
             "by_user_id": uid,
             "target_user_id": target_id,
         },
-        to=f"user_{target_id}",
+        room=f"user_{target_id}",
     )
 
     return jsonify(msg="updated"), 200
@@ -182,7 +197,7 @@ def transfer_ownership(doc_id):
                 "title": d.title,
                 "by_user_id": uid,
             },
-            to=f"user_{new_owner_id}",
+            room=f"user_{new_owner_id}",
         )
 
         # emit real-time update to the old owner if connected
@@ -194,7 +209,7 @@ def transfer_ownership(doc_id):
                 "title": d.title,
                 "by_user_id": uid,
             },
-            to=f"user_{uid}",
+            room=f"user_{uid}",
         )
     
     except Exception as e:
@@ -233,7 +248,7 @@ def remove_collaborator(doc_id, target_id):
             "title": d.title,
             "by_user_id": uid,
         },
-        to=f"user_{target_id}",
+        room=f"user_{target_id}",
     )
 
     return "", 204
