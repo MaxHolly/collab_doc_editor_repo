@@ -29,9 +29,10 @@ class Document(db.Model):
     title = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
     content = db.Column(JSONB)  # store Quill Delta or Yjs snapshot
+    summary = db.Column(db.Text)
     owner_id = db.Column(db.BigInteger, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
 Index("idx_documents_owner_id", Document.owner_id)
 
