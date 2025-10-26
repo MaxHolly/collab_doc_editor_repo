@@ -12,7 +12,7 @@ services:
     image: ollama/ollama:0.3.12
     restart: unless-stopped
     ports:
-      - "11434:11434"
+      - "11434:11434" # remove in prod
     environment:
       OLLAMA_MODEL: phi3:mini
     entrypoint: ["/bin/sh","-lc","ollama pull $${OLLAMA_MODEL} || true; exec ollama serve"]
