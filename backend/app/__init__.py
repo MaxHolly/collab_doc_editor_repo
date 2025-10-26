@@ -85,10 +85,12 @@ def create_app():
     from .api.documents import bp as docs_bp
     from .api.users import bp_users
     from .api.sharing import bp_share
+    from .api.summarize import bp_summarize
     app.register_blueprint(auth_bp, url_prefix="/api")
     app.register_blueprint(docs_bp, url_prefix="/api")
     app.register_blueprint(bp_users, url_prefix="/api")
     app.register_blueprint(bp_share, url_prefix="/api")
+    app.register_blueprint(bp_summarize, url_prefix="/api")
     from .realtime import docs as _  # noqa
 
     # wiring jwt token blocklist checking if token is blocked

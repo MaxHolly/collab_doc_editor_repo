@@ -27,4 +27,5 @@ class CreateDocSchema(BaseModel):
 class UpdateDocSchema(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    summary: Optional[str] = None
     content: Optional[Dict[str, Any]] = None

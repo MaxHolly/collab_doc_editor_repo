@@ -154,7 +154,7 @@ def get_document(doc_id: int):
     return jsonify({
         "id": d.id,
         "title": d.title,
-        "content": d.content,
+        "summary": d.summary,
         "description": d.description,
         "owner_id": d.owner_id,
         "owner": owner_info,
@@ -180,6 +180,8 @@ def update_document(doc_id: int):
         d.description = data.description
     if data.content is not None:
         d.content = data.content
+    if data.summary is not None:
+        d.summary = data.summary
     d.updated_at = db.func.now()
     db.session.commit()
     return jsonify({"message":"updated"})
